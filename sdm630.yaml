@@ -1,0 +1,124 @@
+- name: modbusdevice
+  type: serial
+  method: rtu
+  port: /dev/ttyUSB0
+  baudrate: 9600
+  stopbits: 1
+  bytesize: 8
+  parity: N
+
+sensors:
+ - name: Ток фаза 1
+   precision: 2
+   address: 6
+   input_type: input
+   slave: 1
+   unit_of_measurement: A
+   count: 2
+   data_type: float32
+   device_class: current
+
+ - name: Ток фаза 2
+   precision: 2
+   address: 8
+   input_type: input
+   slave: 1
+   unit_of_measurement: A
+   count: 2
+   data_type: float32
+   device_class: current
+
+ - name: Ток фаза 3
+   precision: 2
+   address: 10
+   input_type: input
+   slave: 1
+   unit_of_measurement: A
+   count: 2
+   data_type: float32
+   device_class: current
+
+ - name: Мощность фаза 1
+   precision: 2
+   address: 12
+   input_type: input
+   slave: 1
+   unit_of_measurement: W
+   count: 2
+   data_type: float32
+   device_class: power
+
+ - name: Мощность фаза 2
+   precision: 2
+   address: 14
+   input_type: input
+   slave: 1
+   unit_of_measurement: W
+   count: 2
+   data_type: float32
+   device_class: power
+
+ - name: Мощность фаза 3
+   precision: 2
+   address: 16
+   input_type: input
+   slave: 1
+   unit_of_measurement: W
+   count: 2
+   data_type: float32
+   device_class: power
+
+ - name: Напряжение фаза 1
+   precision: 2
+   address: 0
+   input_type: input
+   slave: 1
+   unit_of_measurement: В
+   count: 2
+   data_type: float32
+   device_class: voltage
+   state_class: measurement
+
+ - name: Напряжение фаза 2
+   precision: 2
+   address: 2
+   input_type: input
+   slave: 1
+   unit_of_measurement: В
+   count: 2
+   data_type: float32
+   device_class: voltage
+   state_class: measurement
+        
+ - name: Напряжение фаза 3
+   precision: 2
+   address: 4
+   input_type: input
+   slave: 1
+   unit_of_measurement: В
+   count: 2
+   data_type: float32
+   device_class: voltage
+   state_class: measurement
+        
+ - name: Текущее потребление
+   precision: 2
+   address: 52
+   input_type: input
+   slave: 1
+   unit_of_measurement: Wh
+   count: 2
+   data_type: float32
+   state_class: total_increasing
+   device_class: energy
+        
+ - name: Всего потреблено
+   precision: 2
+   address: 342
+   input_type: input
+   slave: 1
+   unit_of_measurement: kWh
+   count: 2
+   data_type: float32
+   state_class: total_increasing
+   device_class: energy
