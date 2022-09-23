@@ -1,0 +1,25 @@
+# Управление котлом, сенсоры которым нужно тепло
+switch:
+  - platform: template
+    switches:
+      boiler:
+        friendly_name: "Бойлер: включаем насос ГВС - нужно тепло"
+        turn_on:
+          service: light.turn_on
+          target:
+            entity_id: light.201_00 #включаем насос ГВС
+        turn_off:
+          service: light.turn_off
+          target:
+            entity_id: light.201_00 #выключаем насос ГВС
+
+      tp:
+        friendly_name: "ТП: включаем насос - требуется тепло"
+        turn_on:
+          service: light.turn_on
+          target:
+            entity_id: light.201_13 #включаем котел
+        turn_off:
+          service: light.turn_off
+          target:
+            entity_id: light.201_13 #выключаем котел
