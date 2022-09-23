@@ -1,5 +1,4 @@
 # Управление котлом, сенсоры которым нужно тепло
-switch:
   - platform: template
     switches:
       boiler:
