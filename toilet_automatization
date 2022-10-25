@@ -1,0 +1,128 @@
+## Если сработал датчику движения или выключателю
+## запускаем скрипт
+alias: "Туалет: включаем свет"
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - binary_sensor.200_33_invert
+    to: "on"
+  - platform: state
+    entity_id:
+      - switch.vykliuchatel_tualet
+    to: "on"
+condition: []
+action:
+  - service: script.1663501164042
+    data: {}
+mode: single
+
+
+##скрипт у меня настроен на включение света на 100% яркости ламп с 6 утра до 22 вечера.
+## 5% с 22 до 6 утра
+## музыка включается с 7 утра до 12 и с 15 до 20:30
+
+alias: "Туалет - включаем свет и музыку с проверкой по времени "
+sequence:
+  - service: timer.cancel
+    data: {}
+    target:
+      entity_id: timer.tualet_taimer_4_minuty
+  - service: timer.start
+    data: {}
+    target:
+      entity_id: timer.tualet_taimer_4_minuty
+  - if:
+      - condition: time
+        after: "06:00:00"
+        before: "22:00:00"
+        weekday:
+          - mon
+          - tue
+          - wed
+          - thu
+          - fri
+          - sat
+          - sun
+    then:
+      - if:
+          - condition: device
+            type: is_off
+            device_id: 44e9700b2328265318945255b6b34895
+            entity_id: switch.vykliuchatel_tualet
+            domain: switch
+        then:
+          - service: switch.turn_on
+            data: {}
+            target:
+              entity_id: switch.vykliuchatel_tualet
+      - service: light.turn_on
+        data:
+          brightness_pct: 100
+        target:
+          entity_id: light.gruppa_tualet
+    else:
+      - service: light.turn_on
+        data:
+          brightness_pct: 5
+        target:
+          entity_id: light.gruppa_tualet
+    alias: c 6 до 22 яркость 100%, иначе 5%
+  - if:
+      - condition: device
+        type: is_off
+        device_id: 44e9700b2328265318945255b6b34895
+        entity_id: switch.vykliuchatel_tualet
+        domain: switch
+    then:
+      - type: turn_on
+        device_id: 44e9700b2328265318945255b6b34895
+        entity_id: switch.vykliuchatel_tualet
+        domain: switch
+  - if:
+      - condition: or
+        conditions:
+          - condition: time
+            after: "07:00:00"
+            before: "12:00:00"
+            weekday:
+              - mon
+              - tue
+              - wed
+              - thu
+              - fri
+              - sat
+              - sun
+          - condition: time
+            after: "15:00:00"
+            before: "20:30:00"
+            weekday:
+              - mon
+              - tue
+              - wed
+              - thu
+              - fri
+              - sun
+              - sat
+    then:
+      - if:
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: media_player.volumio
+                state: playing
+        then:
+          - service: media_player.volume_set
+            data:
+              volume_level: 0.02
+            target:
+              entity_id: media_player.volumio
+          - service: media_player.play_media
+            data:
+              media_content_id: " {\"uri\": \"https://pub0202.101.ru:8443/stream/trust/mp3/128/24\", \"service\":\"webradio\"}"
+              media_content_type: channel
+            target:
+              entity_id: media_player.volumio
+    alias: Проверка по времени и включения музыки
+mode: single
+icon: mdi:lightbulb-group-outline
