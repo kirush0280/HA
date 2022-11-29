@@ -1,0 +1,60 @@
+
+
+###################################################### Термостат ###########################################
+
+# Спальня
+  - platform: generic_thermostat
+    name: Спальня общий
+    target_sensor: sensor.temperatura_spalnia_temperature
+    heater: input_boolean.spalnia_khochet_teplo
+    cold_tolerance: 1
+    hot_tolerance: 0.5
+    away_temp: 16
+#    target_temp: 23
+    initial_hvac_mode: "heat"
+    target_temp_step: 0.5
+    min_temp: 15
+    max_temp: 30
+
+
+######################################################### Автоматизация ####################################
+alias: "Спальня: управление отоплением"
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - climate.spalnia_obshchii
+    attribute: temperature
+condition: []
+action:
+  - service: climate.set_temperature
+    data:
+      temperature: "{{ state_attr('climate.spalnia_obshchii','temperature') }}"
+    target:
+      entity_id:
+        - climate.termostat_spalnia
+  - if:
+      - condition: state
+        entity_id: climate.spalnia_obshchii
+        state: heating
+        attribute: hvac_action
+    then:
+      - service: climate.set_temperature
+        data:
+          temperature: "{{ state_attr('climate.spalnia_obshchii','temperature') + 3 }}"
+        target:
+          entity_id:
+            - climate.termostat_spalnia
+  - if:
+      - condition: state
+        entity_id: climate.spalnia_obshchii
+        attribute: hvac_action
+        state: idle
+    then:
+      - service: climate.set_temperature
+        data:
+          temperature: "{{ state_attr('climate.spalnia_obshchii','temperature') }}"
+        target:
+          entity_id:
+            - climate.termostat_spalnia
+mode: single
