@@ -25,6 +25,10 @@ trigger:
     entity_id:
       - climate.spalnia_obshchii
     attribute: temperature
+  - platform: state
+    entity_id:
+      - climate.spalnia_obshchii
+    attribute: hvac_action
 condition: []
 action:
   - service: climate.set_temperature
