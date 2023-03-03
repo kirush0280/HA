@@ -1,0 +1,99 @@
+substitutions:
+  device_name: esphome-garderob-lamp1
+  id_name: esphome-garderob-lamp1
+  friendly_name: "Гардероб лампа 1"
+  device_description: "Гардероб лампа 1"
+  light_restore_mode: RESTORE_DEFAULT_OFF
+
+esphome:
+  name: '${device_name}'
+  comment: '${device_description}'
+  platform: ESP8266
+  board: esp01_1m
+
+# Enable logging
+logger:
+  baud_rate: 0
+
+# Enable Home Assistant API
+#api:
+#  encryption:
+#    key: "RHaCZcuOc5D7deZ9iIvn535BywvoERxmzhaSjIYdaFE="
+#includes:
+  # contributor [displaced] developed a workaround for properly using the CW/WW LEDs by setting the RGB color to white
+#  - better_rgbww_output.h
+
+ota:
+  password: "b779d38092d0f3127560aee5e7c20161"
+
+wifi:
+  ssid: "devices"
+  password: "XXX".  #укажите Ваш пароль
+ # fast_connect: on
+  manual_ip:
+ #   # Set this to the IP of the ESP
+    static_ip: 192.168.102.27
+ #   # Set this to the IP address of the router. Often ends with .1
+    gateway: 192.168.102.1
+ #   # The subnet of the network. 255.255.255.0 works for most home networks.
+    subnet: 255.255.255.0
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esphome-Garderob-lamp1"
+    password: "S8clNmfEkVT8"
+
+mqtt:
+  broker: 192.168.100.129
+  discovery: true
+  username: mqtt
+  password: Ваш_пароль 
+  topic_prefix: esphome/esphome-garderob-lamp1 #меняем стартовый путь
+  discovery_unique_id_generator: mac
+  
+captive_portal:
+
+output:
+  - platform: esp8266_pwm
+    pin: GPIO14
+    id: output_blue
+   # max_power: 100%
+  - platform: esp8266_pwm
+    pin: GPIO12
+    id: output_green
+   # max_power: 100%
+  - platform: esp8266_pwm
+    pin: GPIO4
+    id: output_red
+   # max_power: 100%
+  - platform: esp8266_pwm
+    pin: GPIO5
+    id: output_coldwhite
+    max_power: 100%
+  - platform: esp8266_pwm
+    pin: GPIO15
+    id: output_warmwhite
+    max_power: 100%
+
+
+light:
+  - platform: rgbww
+    name: '${device_name} Light'
+    red: output_red
+    green: output_green
+    blue: output_blue
+    cold_white: output_coldwhite
+    warm_white: output_warmwhite
+    cold_white_color_temperature: 6000 K
+    warm_white_color_temperature: 3000 K
+    color_interlock: true
+
+text_sensor:
+- platform: wifi_info
+  ip_address:
+    name: Гардероб лампа 1 IP Address
+  mac_address:
+    name: Гардероб лампа 1 Mac Wifi Address
+
+web_server:
+  local: true
