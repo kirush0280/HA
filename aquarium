@@ -1,0 +1,54 @@
+alias: "Детская аквариум: управление освещением"
+description: ""
+trigger:
+  - platform: time
+    at: input_datetime.detskaia_akvarium_vremia_vkliucheniia
+    id: main_on1
+  - platform: time
+    at: input_datetime.detskaia_akvarium_vremia_vkliucheniia_osnovnoi_2
+    id: main_on2
+  - platform: time
+    at: input_datetime.detskaia_akvarium_vremia_vkliucheniia_osnovnoi_3
+    id: main_on3
+  - platform: time
+    at: input_datetime.detskaia_akvarium_vremia_vykliucheniia_osnovnoi
+    id: main_off1
+  - platform: time
+    at: input_datetime.detskaia_akvarium_vremia_vykliucheniia_osnovnoi_2
+    id: main_off2
+  - platform: time
+    at: input_datetime.detskaia_akvarium_vremia_vykliucheniia_osnovnoi_3
+    id: main_off3
+condition: []
+action:
+  - if:
+      - condition: or
+        conditions:
+          - condition: trigger
+            id: main_on1
+          - condition: trigger
+            id: main_on2
+          - condition: trigger
+            id: main_on3
+    then:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.relay1_2
+    alias: Если сработало время включения 1/2/3 - включаем свет
+  - if:
+      - condition: or
+        conditions:
+          - condition: trigger
+            id: main_off1
+          - condition: trigger
+            id: main_off2
+          - condition: trigger
+            id: main_off3
+    then:
+      - service: switch.turn_off
+        data: {}
+        target:
+          entity_id: switch.relay1_2
+    alias: Если сработало время выключения 1/2/3 - выключаем свет
+mode: single
