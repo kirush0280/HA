@@ -1,0 +1,135 @@
+esphome:
+  name: esphome-battery-meter
+  friendly_name: esphome-battery-meter
+
+substitutions:
+  device_name: esphome-battery-meter
+  id_name: esphome-battery-meter
+  friendly_name: "Измеритель батарей"
+  device_description: "Измеритель батарей"
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+  baud_rate: 0
+  logs:
+    adc: ERROR
+
+# Enable Home Assistant API
+api:
+
+ota:
+  password: "b779d38092d0f3127560aee5e7c20161"
+
+# Укажите Ваш WiFi SSID/password
+wifi:
+  ssid: "YYYY"
+  password: "XXX"
+  fast_connect: on
+ ## Если нужно указать статикой IP адреса
+ #  manual_ip:
+ #   # Set this to the IP of the ESP
+ #   static_ip: 192.168.102.20
+ #   # Set this to the IP address of the router. Often ends with .1
+ #   gateway: 192.168.102.1
+ #   # The subnet of the network. 255.255.255.0 works for most home networks.
+ #   subnet: 255.255.255.0
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esphome-battery-meter"
+    password: "12345678"
+
+# Укажите реквизиты доступа если требуется MQTT
+#mqtt:
+#  broker: 192.168.100.129
+#  discovery: true
+#  username: mqtt
+#  password: XXXXX
+#  topic_prefix: esphome/esphome-battery-meter #меняем стартовый путь, что бы SprutHub нашел наше устройство
+#  discovery_unique_id_generator: mac
+  
+captive_portal:
+
+#uart:
+#  baud_rate: 9600
+
+web_server:
+  local: true
+
+# define outputs connected to multiplexer controll lines
+output:
+  - platform: gpio
+    pin: 14
+    id: ADR0
+  - platform: gpio
+    pin: 12
+    id: ADR1
+  - platform: gpio
+    pin: 13
+    id: ADR2
+    
+# define template sensors for each multiplexer input line
+sensor:
+  - platform: template
+    name: "${device_name} A0"
+    id: "Analog_0"
+    accuracy_decimals: 2
+  - platform: template
+    name: "${device_name} A1"
+    id: "Analog_1"    
+    accuracy_decimals: 2
+  - platform: template
+    name: "${device_name} A2"
+    id: "Analog_2"    
+    accuracy_decimals: 2
+  - platform: template
+    name: "${device_name} A3"
+    id: "Analog_3"    
+    accuracy_decimals: 2
+  - platform: template
+    name: "${device_name} A4"
+    id: "Analog_4"    
+    accuracy_decimals: 2
+  - platform: template
+    name: "${device_name} A5"
+    id: "Analog_5"    
+    accuracy_decimals: 2
+  - platform: template
+    name: "${device_name} A6"
+    id: "Analog_6"    
+    accuracy_decimals: 2
+  - platform: template
+    name: "${device_name} A7"
+    id: "Analog_7"    
+    accuracy_decimals: 2
+
+# define ADC sensor and apply lambda filter implementing multiplexer logic
+  - platform: adc
+    pin: A0
+    name: "${device_name} AnalogValue"
+    update_interval: 10s
+    internal: true
+    raw: false
+    filters:
+      - multiply: 3
+      - lambda : |-
+          static byte multiplex_counter = 0;
+          if (multiplex_counter==0) id(Analog_0).publish_state(x);
+          if (multiplex_counter==1) id(Analog_1).publish_state(x);
+          if (multiplex_counter==2) id(Analog_2).publish_state(x);
+          if (multiplex_counter==3) id(Analog_3).publish_state(x);
+          if (multiplex_counter==4) id(Analog_4).publish_state(x);          
+          if (multiplex_counter==5) id(Analog_5).publish_state(x);          
+          if (multiplex_counter==6) id(Analog_6).publish_state(x);
+          if (multiplex_counter==7) id(Analog_7).publish_state(x); 
+          multiplex_counter++;
+          if(multiplex_counter==8) multiplex_counter=0;
+          if (multiplex_counter & 0b001) id(ADR0).turn_on(); else id(ADR0).turn_off();
+          if (multiplex_counter & 0b010) id(ADR1).turn_on(); else id(ADR1).turn_off();
+          if (multiplex_counter & 0b100) id(ADR2).turn_on(); else id(ADR2).turn_off();
+          
+          return 0;
+      - delta: 100  # to prevent processing raw analog sensor  
