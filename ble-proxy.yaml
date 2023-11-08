@@ -1,0 +1,323 @@
+  esphome:
+    name: esphome-ble-proxy
+    friendly_name: Bluetooth Proxy Koridor
+  
+  esp32:
+    #board: esp32doit-devkit-v1
+    board: esp32dev
+    framework:
+      type: esp-idf
+  
+  # Enable logging
+  logger:
+  
+  wifi:
+    ssid: "yyy"              #SSID вашего WiFi
+    password: XXX            #пароль от Wifi
+    fast_connect: on
+    manual_ip:                    #можно указать IP в ручную, если DHCP то можно закомментировать 4 строки
+     static_ip: 192.168.102.6
+     gateway: 192.168.102.1
+     subnet: 255.255.255.0
+  
+  api:
+  ota:
+    password: "xxx"  #Ваш ключ
+  
+  substitutions:
+    name: esphome-ble-proxy
+    friendly_name: esphome ble proxy
+    binary_sensor_debounce: 750ms
+    
+    ld2410_id: ld2410_toilet
+    ld2410_name: "Toilet DP "          #латиницей и в конце пробел
+    mac_address: DD:54:84:97:34:7F     #мак датчика можно посмотреть, через его родную программу HLKRadarTool
+    
+    ld2410_id_2: ld2410_koridor
+    ld2410_name_2: "Koridor DP "      #латиницей и в конце пробел
+    mac_address_2: 34:6f:29:94:cb:47
+  
+  esp32_ble_tracker:
+    scan_parameters:
+      interval: 320ms
+      window: 160ms
+      active: false
+  
+  bluetooth_proxy:
+    active: False
+  
+  
+  # START OF LD2410 CODE
+  ble_client:
+    - mac_address: ${mac_address}
+      id: ${ld2410_id}
+      on_disconnect:
+        then:
+        - binary_sensor.template.publish:
+            id: "${ld2410_id}_ble_connected"
+            state: OFF
+        - logger.log:
+            format: "disconnected"
+            tag: "${ld2410_id}_connect"
+        - delay: 100ms
+        - lambda: |-
+            id(${ld2410_id}_motion_detected).publish_state(false);
+            id(${ld2410_id}_occupancy_detected).publish_state(false);
+            id(${ld2410_id}_static_distance).publish_state(NAN);
+            id(${ld2410_id}_motion_distance).publish_state(NAN);
+            id(${ld2410_id}_detection_distance).publish_state(NAN);
+      on_connect:
+        then:
+        - lambda: |-
+            id(${ld2410_id}_ble_connected).publish_state(true);
+            ESP_LOGD("ld2410", "LD2410 connected! Configuring...");
+        - delay: 500ms
+        - ble_client.ble_write:
+            id: ${ld2410_id}
+            service_uuid: 0000fff0-0000-1000-8000-00805f9b34fb
+            characteristic_uuid: 0000fff2-0000-1000-8000-00805f9b34fb
+            value: [0xfd, 0xfc, 0xfb, 0xfa, 0x08, 0x00, 0xa8, 0x00,  0x48, 0x69, 0x4c, 0x69, 0x6e, 0x6b,  0x04, 0x03, 0x02, 0x01] # preamble, password (HiLink), postamble
+        - delay: 100ms
+        - ble_client.ble_write:
+            id: ${ld2410_id}
+            service_uuid: 0000fff0-0000-1000-8000-00805f9b34fb
+            characteristic_uuid: 0000fff2-0000-1000-8000-00805f9b34fb
+            value: [0xfd, 0xfc, 0xfb, 0xfa, 0x04, 0x00, 0xff, 0x00, 0x01, 0x00, 0x04, 0x03, 0x02, 0x01] # enable config
+        - delay: 100ms
+        - ble_client.ble_write:
+            id: ${ld2410_id}
+            service_uuid: 0000fff0-0000-1000-8000-00805f9b34fb
+            characteristic_uuid: 0000fff2-0000-1000-8000-00805f9b34fb
+            value: [0xfd, 0xfc, 0xfb, 0xfa, 0x02, 0x00b, 0x00, 0x04, 0x03, 0x02, 0x01] # enable engineering mode
+        - delay: 100ms
+        - ble_client.ble_write:
+            id: ${ld2410_id}
+            service_uuid: 0000fff0-0000-1000-8000-00805f9b34fb
+            characteristic_uuid: 0000fff2-0000-1000-8000-00805f9b34fb
+            value: [0xfd, 0xfc, 0xfb, 0xfa, 0x02, 0x00, 0xfe, 0x00, 0x04, 0x03, 0x02, 0x01] # disable config
+        - delay: 100ms
+        - lambda: |-
+            ESP_LOGD("ld2410", "LD2410 configuration done!");
+  #
+  ## Second LD2410
+    - mac_address: ${mac_address_2}
+      id: ${ld2410_id_2}
+      on_disconnect:
+        then:
+        - binary_sensor.template.publish:
+            id: "${ld2410_id_2}_ble_connected"
+            state: OFF
+        - logger.log:
+            format: "disconnected"
+            tag: "${ld2410_id_2}_connect"
+        - delay: 100ms
+        - lambda: |-
+            id(${ld2410_id_2}_motion_detected).publish_state(false);
+            id(${ld2410_id_2}_occupancy_detected).publish_state(false);
+            id(${ld2410_id_2}_static_distance).publish_state(NAN);
+            id(${ld2410_id_2}_motion_distance).publish_state(NAN);
+            id(${ld2410_id_2}_detection_distance).publish_state(NAN);
+      on_connect:
+        then:
+        - lambda: |-
+            id(${ld2410_id_2}_ble_connected).publish_state(true);
+            ESP_LOGD("ld2410", "LD2410 connected! Configuring...");
+        - delay: 500ms
+        - ble_client.ble_write:
+            id: ${ld2410_id_2}
+            service_uuid: 0000fff0-0000-1000-8000-00805f9b34fb
+            characteristic_uuid: 0000fff2-0000-1000-8000-00805f9b34fb
+            value: [0xfd, 0xfc, 0xfb, 0xfa, 0x08, 0x00, 0xa8, 0x00,  0x48, 0x69, 0x4c, 0x69, 0x6e, 0x6b,  0x04, 0x03, 0x02, 0x01] # preamble, password (HiLink), postamble
+        - delay: 100ms
+        - ble_client.ble_write:
+            id: ${ld2410_id_2}
+            service_uuid: 0000fff0-0000-1000-8000-00805f9b34fb
+            characteristic_uuid: 0000fff2-0000-1000-8000-00805f9b34fb
+            value: [0xfd, 0xfc, 0xfb, 0xfa, 0x04, 0x00, 0xff, 0x00, 0x01, 0x00, 0x04, 0x03, 0x02, 0x01] # enable config
+        - delay: 100ms
+        - ble_client.ble_write:
+            id: ${ld2410_id_2}
+            service_uuid: 0000fff0-0000-1000-8000-00805f9b34fb
+            characteristic_uuid: 0000fff2-0000-1000-8000-00805f9b34fb
+            value: [0xfd, 0xfc, 0xfb, 0xfa, 0x02, 0x00b, 0x00, 0x04, 0x03, 0x02, 0x01] # enable engineering mode
+        - delay: 100ms
+        - ble_client.ble_write:
+            id: ${ld2410_id_2}
+            service_uuid: 0000fff0-0000-1000-8000-00805f9b34fb
+            characteristic_uuid: 0000fff2-0000-1000-8000-00805f9b34fb
+            value: [0xfd, 0xfc, 0xfb, 0xfa, 0x02, 0x00, 0xfe, 0x00, 0x04, 0x03, 0x02, 0x01] # disable config
+        - delay: 100ms
+        - lambda: |-
+            ESP_LOGD("ld2410", "LD2410 configuration done!");
+  
+  
+  
+  binary_sensor:
+    - platform: template
+      name: "${ld2410_name}Motion Detected"
+      id: ${ld2410_id}_motion_detected
+      device_class: motion
+      filters:
+      - delayed_on_off: ${binary_sensor_debounce}
+    - platform: template
+      name: "${ld2410_name}Occupancy Detected"
+      id: ${ld2410_id}_occupancy_detected
+      device_class: occupancy
+      filters:
+      - delayed_on_off: ${binary_sensor_debounce}
+    - platform: template
+      name: "${ld2410_name}LD2410 Connected"
+      id: ${ld2410_id}_ble_connected
+      device_class: connectivity
+  ## Secondo LD2410
+    - platform: template
+      name: "${ld2410_name_2}Motion Detected"
+      id: ${ld2410_id_2}_motion_detected
+      device_class: motion
+      filters:
+      - delayed_on_off: ${binary_sensor_debounce}
+    - platform: template
+      name: "${ld2410_name_2}Occupancy Detected"
+      id: ${ld2410_id_2}_occupancy_detected
+      device_class: occupancy
+      filters:
+      - delayed_on_off: ${binary_sensor_debounce}
+    - platform: template
+      name: "${ld2410_name_2}LD2410 Connected"
+      id: ${ld2410_id_2}_ble_connected
+      device_class: connectivity
+  
+  
+  sensor:    
+    - platform: template
+      name: "${ld2410_name}Motion Distance"
+      id: ${ld2410_id}_motion_distance
+      update_interval: never
+      device_class: distance
+      unit_of_measurement: "cm"
+      filters:
+      - throttle_average: 3s
+      - filter_out: NAN
+    - platform: template
+      name: "${ld2410_name}Static Distance"
+      id: ${ld2410_id}_static_distance
+      update_interval: never
+      device_class: distance
+      unit_of_measurement: "cm"
+      filters:
+      - throttle_average: 3s
+      - filter_out: NAN
+    - platform: template
+      name: "${ld2410_name}Detection Distance"
+      id: ${ld2410_id}_detection_distance
+      update_interval: never
+      device_class: distance
+      unit_of_measurement: "cm"
+      filters:
+      - throttle_average: 3s
+      - filter_out: NAN
+    - platform: ble_client
+      type: characteristic
+      ble_client_id: ${ld2410_id}
+      service_uuid: '0000fff0-0000-1000-8000-00805f9b34fb'
+      characteristic_uuid: '0000fff1-0000-1000-8000-00805f9b34fb'
+      update_interval: never
+      notify: true
+      internal: True
+      filters:
+      - throttle: 24h
+      id: ${ld2410_id}_internal_parser
+      lambda: |-
+        // Only report connected once we have seen the first update
+        if (!${ld2410_id}_ble_connected->state) {
+          id(${ld2410_id}_ble_connected).publish_state(true);
+        }
+        if (x.size() < 16) {
+          ESP_LOGD("${ld2410_id}_notify", "notify was given too little data (%d bytes)", x.size());
+          return NAN;
+        }
+        if (x[0] != 0xf4 || x[1] != 0xf3 || x[2] != 0xf2 || x[3] != 0xf1) {
+          return NAN;
+        }
+        bool moving = x[8] & 0x1;
+        bool stationary = x[8] & 0x2;
+        float detect_distance = x[15];
+        detect_distance += x[16] << 8;
+        float static_distance = x[12];
+        static_distance += x[13] << 8;
+        float motion_distance = x[9];
+        motion_distance += x[10] << 8;
+        if (!moving && !stationary) detect_distance = NAN;
+        id(${ld2410_id}_motion_detected).publish_state(moving);
+        id(${ld2410_id}_occupancy_detected).publish_state(stationary);
+        id(${ld2410_id}_static_distance).publish_state(static_distance);
+        id(${ld2410_id}_motion_distance).publish_state(motion_distance);
+        id(${ld2410_id}_detection_distance).publish_state(detect_distance);
+        return NAN;
+  #
+  ## Second LD2410
+    - platform: template
+      name: "${ld2410_name_2}Motion Distance"
+      id: ${ld2410_id_2}_motion_distance
+      update_interval: never
+      device_class: distance
+      unit_of_measurement: "cm"
+      filters:
+      - throttle_average: 3s
+      - filter_out: NAN
+    - platform: template
+      name: "${ld2410_name_2}Static Distance"
+      id: ${ld2410_id_2}_static_distance
+      update_interval: never
+      device_class: distance
+      unit_of_measurement: "cm"
+      filters:
+      - throttle_average: 3s
+      - filter_out: NAN
+    - platform: template
+      name: "${ld2410_name_2}Detection Distance"
+      id: ${ld2410_id_2}_detection_distance
+      update_interval: never
+      device_class: distance
+      unit_of_measurement: "cm"
+      filters:
+      - throttle_average: 3s
+      - filter_out: NAN
+    - platform: ble_client
+      type: characteristic
+      ble_client_id: ${ld2410_id_2}
+      service_uuid: '0000fff0-0000-1000-8000-00805f9b34fb'
+      characteristic_uuid: '0000fff1-0000-1000-8000-00805f9b34fb'
+      update_interval: never
+      notify: true
+      internal: True
+      filters:
+      - throttle: 24h
+      id: ${ld2410_id_2}_internal_parser
+      lambda: |-
+        // Only report connected once we have seen the first update
+        if (!${ld2410_id_2}_ble_connected->state) {
+          id(${ld2410_id_2}_ble_connected).publish_state(true);
+        }
+        if (x.size() < 16) {
+          ESP_LOGD("${ld2410_id_2}_notify", "notify was given too little data (%d bytes)", x.size());
+          return NAN;
+        }
+        if (x[0] != 0xf4 || x[1] != 0xf3 || x[2] != 0xf2 || x[3] != 0xf1) {
+          return NAN;
+        }
+        bool moving = x[8] & 0x1;
+        bool stationary = x[8] & 0x2;
+        float detect_distance = x[15];
+        detect_distance += x[16] << 8;
+        float static_distance = x[12];
+        static_distance += x[13] << 8;
+        float motion_distance = x[9];
+        motion_distance += x[10] << 8;
+        if (!moving && !stationary) detect_distance = NAN;
+        id(${ld2410_id_2}_motion_detected).publish_state(moving);
+        id(${ld2410_id_2}_occupancy_detected).publish_state(stationary);
+        id(${ld2410_id_2}_static_distance).publish_state(static_distance);
+        id(${ld2410_id_2}_motion_distance).publish_state(motion_distance);
+        id(${ld2410_id_2}_detection_distance).publish_state(detect_distance);
+        return NAN;
