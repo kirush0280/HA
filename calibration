@@ -5,6 +5,9 @@ trigger:
     entity_id:
       - sensor.temperatura_biblioteka_temperature
       - sensor.temperatura_detskaia_temperature
+      - sensor.garazh_temperatura_ispr
+      - sensor.temperatura_iura_mansarda_temperature
+      - sensor.temperatura_vannaia_temperature
 condition:
   - condition: state
     entity_id: input_boolean.otopitelnyi_sezon
@@ -14,7 +17,12 @@ action:
       temp_json: |
         {% set temp_json = {
           "sensor.temperatura_biblioteka_temperature": ["climate.termostat_biblioteka", "number.termostat_biblioteka_local_temperature_calibration"],
-          "sensor.temperatura_detskaia_temperature": ["climate.termostat_detskaia", "number.termostat_detskaia_local_temperature_calibration"]
+          "sensor.temperatura_detskaia_temperature": ["climate.termostat_detskaia", "number.termostat_detskaia_local_temperature_calibration"],
+          "sensor.garazh_temperatura_ispr": ["climate.termostat_garazh_1", "number.termostat_garazh_1_local_temperature_calibration"],
+          "sensor.garazh_temperatura_ispr": ["climate.termostat_garazh_2", "number.termostat_garazh_2_local_temperature_calibration"],
+          "sensor.temperatura_iura_mansarda_temperature": ["climate.termostat_iura_mansarda_levaia", "number.termostat_iura_mansarda_levaia_local_temperature_calibration"],
+          "sensor.temperatura_iura_mansarda_temperature": ["climate.termostat_iura_mansarda_pravaia", "number.termostat_iura_mansarda_pravaia_local_temperature_calibration"],
+          "sensor.temperatura_vannaia_temperature": ["climate.termostat_vannaia", "number.termostat_vannaia_local_temperature_calibration"]
           }
          %}
          {{ temp_json }}
@@ -32,9 +40,24 @@ action:
             value_template: >-
               {{ trigger.entity_id ==
               'sensor.temperatura_biblioteka_temperature' }}
+            alias: Библиотека
           - condition: template
             value_template: >-
               {{ trigger.entity_id == 'sensor.temperatura_detskaia_temperature'
+              }}
+            alias: Детская
+          - condition: template
+            value_template: "{{ trigger.entity_id == 'sensor.garazh_temperatura_ispr' }}"
+            alias: Гараж
+          - alias: Мансарда
+            condition: template
+            value_template: >-
+              {{ trigger.entity_id ==
+              'sensor.temperatura_iura_mansarda_temperature' }}
+          - alias: Ванная
+            condition: template
+            value_template: >-
+              {{ trigger.entity_id == 'sensor.temperatura_vannaia_temperature'
               }}
     then:
       - service: number.set_value
