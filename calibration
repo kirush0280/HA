@@ -1,0 +1,65 @@
+alias: Калибровка
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.temperatura_biblioteka_temperature
+      - sensor.temperatura_detskaia_temperature
+condition:
+  - condition: state
+    entity_id: input_boolean.otopitelnyi_sezon
+    state: "on"
+action:
+  - variables:
+      temp_json: |
+        {% set temp_json = {
+          "sensor.temperatura_biblioteka_temperature": ["climate.termostat_biblioteka", "number.termostat_biblioteka_local_temperature_calibration"],
+          "sensor.temperatura_detskaia_temperature": ["climate.termostat_detskaia", "number.termostat_detskaia_local_temperature_calibration"]
+          }
+         %}
+         {{ temp_json }}
+  - if:
+      - condition: template
+        value_template: "{{ has_value(trigger.entity_id) }}"
+      - condition: template
+        value_template: >-
+          {{ states(trigger.entity_id)|float|round(0) !=
+          state_attr(temp_json[trigger.entity_id][0],'current_temperature')|float|round(0)
+          }}
+      - condition: or
+        conditions:
+          - condition: template
+            value_template: >-
+              {{ trigger.entity_id ==
+              'sensor.temperatura_biblioteka_temperature' }}
+          - condition: template
+            value_template: >-
+              {{ trigger.entity_id == 'sensor.temperatura_detskaia_temperature'
+              }}
+    then:
+      - service: number.set_value
+        data:
+          value: "0"
+        target:
+          entity_id: |
+            {{ temp_json[trigger.entity_id][1] }}
+      - delay: "00:00:05"
+      - service: number.set_value
+        data:
+          value: >
+            {% if (states(trigger.entity_id)|float -
+            state_attr(temp_json[trigger.entity_id][0],
+            'current_temperature')|float)|round(1) < -5 %}
+              -5
+            {% elif (states(trigger.entity_id)|float -
+            state_attr(temp_json[trigger.entity_id][0],
+            'current_temperature')|float)|round(1) > 5 %}
+              5
+            {% else %}
+              {{ (states(trigger.entity_id)|float - state_attr(temp_json[trigger.entity_id][0], 'current_temperature')|float)|round(1) }}
+            {% endif %}
+        target:
+          entity_id: |
+            {{ temp_json[trigger.entity_id][1] }}
+initial_state: true
+mode: parallel
