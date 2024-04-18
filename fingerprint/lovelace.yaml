@@ -1,0 +1,48 @@
+type: sections
+sections:
+  - type: grid
+    cards:
+      - type: horizontal-stack
+        cards:
+          - type: tile
+            entity: sensor.esphome_fingerprint
+            hide_state: false
+            show_entity_picture: false
+            vertical: true
+            name: Статус
+            tap_action:
+              action: none
+            icon_tap_action:
+              action: none
+            icon: mdi:fingerprint
+      - type: markdown
+        content: >-
+          {% for key, value in states.saver.saver_2.attributes.variables.items()
+          %}
+
+          <h4>{{ key }} : {{ value | title }}</h4>
+
+          {% endfor %}
+        title: Сохраненные ключи
+      - type: horizontal-stack
+        cards:
+          - show_name: true
+            show_icon: true
+            type: button
+            tap_action:
+              action: toggle
+            entity: script.finger_learn
+            icon: mdi:fingerprint
+            icon_height: 50px
+            name: Новый отпечаток
+          - show_name: true
+            show_icon: true
+            type: button
+            tap_action:
+              action: toggle
+            entity: script.fingerprint_delete
+            icon_height: 50px
+      - type: entities
+        entities:
+          - entity: input_text.fingerprint_learning_name
+          - entity: input_number.fingerprint_learning_id
