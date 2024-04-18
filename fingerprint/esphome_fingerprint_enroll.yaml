@@ -1,0 +1,12 @@
+alias: Обучение новому отпечатку
+sequence:
+  - service: esphome.esphome_fingerprint_enroll
+    data:
+      num_scans: 2
+      finger_id: "{{states('input_number.fingerprint_learning_id') | int}}"
+  - service: saver.set_variable
+    data:
+      name: "{{ states('input_number.fingerprint_learning_id') | int }}"
+      value: "{{ states('input_text.fingerprint_learning_name') }} "
+mode: single
+icon: mdi:fingerprint
