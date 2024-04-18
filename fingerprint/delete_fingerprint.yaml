@@ -1,0 +1,10 @@
+alias: Удаление отпечатка
+sequence:
+  - service: saver.delete_variable
+    data:
+      name: "{{states('input_number.fingerprint_learning_id') | int}}"
+  - service: esphome.esphome_fingerprint_delete
+    data:
+      finger_id: "{{states('input_number.fingerprint_learning_id') | int}}"
+mode: single
+icon: mdi:fingerprint-off
