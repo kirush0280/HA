@@ -1,0 +1,147 @@
+esphome:
+  name: esphome-fingerprint
+  friendly_name: esphome-fingerprint
+ 
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+ 
+substitutions:
+  device_name: esphome-fingerprint
+ 
+web_server:
+  port: 80
+ 
+wifi:
+  ssid: "XXX"
+  password: "XXX"
+ 
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+   ssid: "esphome-fingerprint"
+   password: "XXX"
+ 
+captive_portal:
+# Enable logging
+logger:
+ota:
+
+uart:
+  tx_pin: GPIO17
+  rx_pin: GPIO16
+  baud_rate: 57600
+
+fingerprint_grow:
+  sensing_pin: GPIO5
+  on_finger_scan_matched:
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Распознан"
+    - fingerprint_grow.aura_led_control:
+        state: BREATHING
+        speed: 200
+        color: BLUE
+        count: 2        
+    - delay: 10s
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Приложите палец"    
+
+  on_finger_scan_unmatched:
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Не распознан"
+    - fingerprint_grow.aura_led_control:
+        state: FLASHING
+        speed: 25
+        color: RED
+        count: 3          
+    - delay: 10s
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Приложите палец"
+        
+  on_enrollment_scan:
+    - fingerprint_grow.aura_led_control:
+        state: FLASHING
+        speed: 25
+        color: BLUE
+        count: 2
+    - fingerprint_grow.aura_led_control:
+        state: ALWAYS_ON
+        speed: 0
+        color: PURPLE
+        count: 0
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Палец отсканирован"
+  on_enrollment_done:
+    - fingerprint_grow.aura_led_control:
+        state: BREATHING
+        speed: 100
+        color: BLUE
+        count: 2
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Изучен отпечаток"
+  on_enrollment_failed:
+    - fingerprint_grow.aura_led_control:
+        state: FLASHING
+        speed: 25
+        color: RED
+        count: 4
+    - text_sensor.template.publish:
+        id: fingerprint_state
+        state: "Не удалось изучить отпечаток"
+
+text_sensor:
+  - platform: template
+    id: fingerprint_state
+    name: "Гараж статус"
+
+sensor:
+  - platform: fingerprint_grow
+    fingerprint_count:
+      name: "Гараж отпечатков в памяти"
+      id: fingerprint_count
+    last_finger_id:
+      name: "Гараж последний ID"
+    last_confidence:
+      name: "Гараж Last Confidence"
+    status:
+      name: "Гараж сканер статус"
+    capacity:
+      name: "Гараж сканер ёмкость"
+    security_level:
+      name: "Гараж Security Level"
+
+api:
+  services:
+  - service: enroll
+    variables:
+      finger_id: int
+      num_scans: int
+    then:
+      - fingerprint_grow.enroll:
+          finger_id: !lambda 'return finger_id;'
+          num_scans: !lambda 'return num_scans;'
+  - service: enroll_next # Idea by Ralf Klüber (thanks!)
+    variables:
+      num_scans: int
+    then:
+      - fingerprint_grow.enroll:
+          finger_id: !lambda 'return id(fingerprint_count).state;'
+          num_scans: !lambda 'return num_scans;'
+  - service: cancel_enroll
+    then:
+      - fingerprint_grow.cancel_enroll:
+  - service: delete
+    variables:
+      finger_id: int
+    then:
+      - fingerprint_grow.delete:
+          finger_id: !lambda 'return finger_id;'
+  - service: delete_all
+    then:
+      - fingerprint_grow.delete_all:
